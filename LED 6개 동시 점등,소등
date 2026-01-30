@@ -1,0 +1,81 @@
+/* USER CODE BEGIN Header */
+/* USER CODE END Header */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <main.h>  // STM32 HAL 라이브러리 메인 헤더 (CubeMX 자동 생성)
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+/* 사용자 정의 타입 정의 영역 (구조체, 열거형 등) */
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+/* 사용자 정의 매크로/상수 정의 영역 */
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+/* 사용자 정의 매크로 함수 영역 */
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+                    // 전역 변수 영역 (CubeMX 자동 관리)
+/* USER CODE BEGIN PV */
+/* 사용자 정의 전역 변수 영역 */
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+/* 함수 프로토타입 선언 영역 */
+void SystemClock_Config(void);     // 시스템 클럭 설정 함수
+static void MX_GPIO_Init(void);    // GPIO 초기화 함수 (CubeMX 자동 생성)
+
+int main(void){
+  /* USER CODE BEGIN 1 */
+  /* 사용자 코드 시작 전 초기화 영역 (사용 안함) */
+  /* USER CODE END 1 */
+
+  /* ========== MCU 기본 설정 ========== */
+  /* 모든 주변 장치 리셋, Flash 인터페이스 초기화, Systick 설정 */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+  /* HAL_Init 직후 사용자 초기화 영역 */
+  /* USER CODE END Init */
+
+  /* 시스템 클럭 설정 (HSE/HSI/PLL 등 - CubeMX에서 생성) */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+  /* 시스템 클럭 설정 후 사용자 초기화 영역 */
+  /* USER CODE END SysInit */
+
+  /* 모든 CubeMX에서 설정한 주변 장치 초기화 */
+  MX_GPIO_Init();  // GPIO 핀 설정 (PD10~PD15 출력으로 설정됨)
+
+  /* USER CODE BEGIN 2 */
+  /* 하드웨어 초기화 완료 후 사용자 코드 영역 */
+  /* USER CODE END 2 */
+
+  /* ========== 무한 루프 (메인 작업) ========== */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
+    
+    /* USER CODE BEGIN 3 */
+    // PD10, PD11, PD12, PD13, PD14, PD15 핀 동시 토글 (6개 LED 깜빡임)
+    HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15);
+    
+    // 1초(1000ms) 대기
+    HAL_Delay(1000);
+    /* USER CODE END 3 */
+  }
+  /* USER CODE END WHILE */
+}
+
+/* USER CODE BEGIN 4 */
+/* 사용자 정의 함수 영역 */
+/* USER CODE END 4 */

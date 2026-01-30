@@ -1,0 +1,95 @@
+/* USER CODE BEGIN Header */
+/* USER CODE END Header */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <main.h>  // STM32 HAL 라이브러리 메인 헤더 (CubeMX 자동 생성)
+/* USER CODE END Includes */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+/* 사용자 추가 헤더 파일 영역 */
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+/* 사용자 정의 타입(구조체, enum 등) 영역 */
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+/* 사용자 정의 상수/매크로 영역 */
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+/* 사용자 정의 매크로 함수 영역 */
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* 전역 변수 영역 (CubeMX 관리) */
+/* USER CODE BEGIN PV */
+/* 사용자 전역 변수 영역 */
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);     // 시스템 클럭 설정 함수 (CubeMX 자동 생성)
+static void MX_GPIO_Init(void);    // GPIO 초기화 함수 (CubeMX 자동 생성)
+/* USER CODE BEGIN PFP */
+/* 사용자 함수 프로토타입 영역 */
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+/* 사용자 정의 함수 영역 */
+/* USER CODE END 0 */
+
+int main(void){
+  /* USER CODE BEGIN 1 */
+  /* PD10~PD15 핀 번호를 배열로 정의 (LED 핀 매핑) */
+  int LED[6] = {GPIO_PIN_10, GPIO_PIN_11, GPIO_PIN_12, GPIO_PIN_13, GPIO_PIN_14, GPIO_PIN_15};
+  /* USER CODE END 1 */
+
+  /* ========== MCU 기본 초기화 ========= */
+  HAL_Init();  // HAL 라이브러리, Systick, Flash 초기화
+
+  /* USER CODE BEGIN Init */
+  /* HAL_Init 후 사용자 초기화 영역 */
+  /* USER CODE END Init */
+
+  SystemClock_Config();  // 시스템 클럭 설정 (CubeMX 자동)
+
+  /* USER CODE BEGIN SysInit */
+  /* 클럭 설정 후 사용자 초기화 영역 */
+  /* USER CODE END SysInit */
+
+  MX_GPIO_Init();  // GPIO 초기화 (PD10~PD15 출력 모드)
+
+  /* USER CODE BEGIN 2 */
+  /* 하드웨어 초기화 완료 후 사용자 코드 영역 */
+  /* USER CODE END 2 */
+
+  /* ========== 무한 루프 (메인 작업) ========== */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* 1단계: 모든 LED 동시 점등 (PD10~PD15 전부 HIGH) */
+    HAL_GPIO_WritePin(GPIOD,
+                      GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, 1);
+    HAL_Delay(500);  // 0.5초 대기
+
+    /* USER CODE BEGIN 3 */
+    /* 2단계: LED 배열 순차 소등 (z=0~5 → PD10→PD11→...→PD15) */
+    for(int z = 0; z < 6; z++)
+    {
+      HAL_GPIO_WritePin(GPIOD, LED[z], 0);  // LED[z] 핀만 소등 (HIGH→LOW)
+      HAL_Delay(500);                       // 각 LED당 0.5초 대기
+    }
+    /* 6개 LED 순차 소등 완료 → 다음 루프에서 다시 전부 점등 
+  }
+  /* USER CODE END 3 */
+  /* USER CODE END WHILE */
+  }
+}

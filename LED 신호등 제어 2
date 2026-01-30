@@ -1,0 +1,82 @@
+/* USER CODE BEGIN Header */
+/* USER CODE END Header */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <main.h>  // STM32 HAL 라이브러리 메인 헤더 (CubeMX 자동 생성)
+/* USER CODE END Includes */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+/* 사용자 추가 헤더 파일 영역 */
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+/* 사용자 정의 타입(구조체, enum 등) 영역 */
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+/* 사용자 정의 상수/매크로 영역 */
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+/* 사용자 정의 매크로 함수 영역 */
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* 전역 변수 영역 (CubeMX 관리) */
+/* USER CODE BEGIN PV */
+/* 사용자 전역 변수 영역 */
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);     // 시스템 클럭 설정 함수 (CubeMX 자동 생성)
+static void MX_GPIO_Init(void);    // GPIO 초기화 함수 (CubeMX 자동 생성)
+/* USER CODE BEGIN PFP */
+/* 사용자 함수 프로토타입 영역 */
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+/* 사용자 정의 함수 영역 */
+/* USER CODE END 0 */
+
+int main(void){
+  /* ========== MCU 초기화 ========= */
+  HAL_Init();           // HAL 라이브러리 초기화
+  SystemClock_Config(); // 시스템 클럭 설정
+  MX_GPIO_Init();       // GPIO 설정 (PA0 입력, PD10~15 출력)
+
+  /* ========== 무한 루프 ========== */
+  while (1)
+  {
+    /* 기본 상태: PD10+PD15 항상 점등 (대기/정지 신호) */
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10|GPIO_PIN_15, 1);  // (항상 ON)
+
+    /* SW1 (PA0) 눌렀을 때만 신호등 시퀀스 실행 */
+    if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == 1)  // High Active 스위치
+    {
+      /* PD10+PD15 끄고 다음 단계 진행 */
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10|GPIO_PIN_15, 0);  // 대기 OFF
+
+      /* 1단계: PD14+PD10 점등 (2초) */
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14|GPIO_PIN_10, 1); 
+      HAL_Delay(2000);
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14|GPIO_PIN_10, 0);
+
+      /* 2단계: PD13+PD12 점등 (2초) */
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13|GPIO_PIN_12, 1); 
+      HAL_Delay(2000);
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13|GPIO_PIN_12, 0);
+
+      /* 3단계: PD13+PD11 점등 (2초) */
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13|GPIO_PIN_11, 1);  
+      HAL_Delay(2000);
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13|GPIO_PIN_11, 0);
+    }
+    /* 스위치 안 누르면 PD10+PD15만 계속 점등  */
+  }
+}

@@ -1,0 +1,128 @@
+/* USER CODE BEGIN Header */
+/* USER CODE END Header */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <main.h>  // STM32 HAL 라이브러리 메인 헤더 (CubeMX 자동 생성)
+#include <string.h>  // memcpy() 사용
+/* USER CODE END Includes */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+/* 사용자 추가 헤더 파일 영역 */
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+/* 사용자 정의 타입 영역 */
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+/* 사용자 정의 상수/매크로 영역 */
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+  #define SET_IF(expr) ((expr) ? GPIO_PIN_SET : GPIO_PIN_RESET)     /* 7세그먼트 제어 매크로: 비트1→ON(SET), 비트0→OFF(RESET) */
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* 전역 변수 영역 */
+/* USER CODE BEGIN PV */
+/* 사용자 전역 변수 영역 */
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);     // 시스템 클럭 설정
+static void MX_GPIO_Init(void);    // GPIO 초기화 (PD10~15 출력)
+/* USER CODE BEGIN PFP */
+/* 사용자 함수 프로토타입 영역 */
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+/* 사용자 정의 함수 영역 */
+/* USER CODE END 0 */
+
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+/* 7세그먼트 공통음극 패턴 배열 (0~9) */
+unsigned char FND_CA[] = {0xC0,0xF9,0xA4,0xB0,0x99,0x92,0x82,0xF8,0x80,0x90};
+
+/* FND1 세그먼트 핀 배열 (첫 번째 디스플레이, GPIOE) */
+int FND1[8] = {GPIO_PIN_0,GPIO_PIN_1,GPIO_PIN_11,GPIO_PIN_10,GPIO_PIN_15,GPIO_PIN_5,GPIO_PIN_6,GPIO_PIN_12};
+
+/* FND2 세그먼트 핀 배열 (두 번째 디스플레이, GPIOE) */
+int FND2[8] = {GPIO_PIN_8,GPIO_PIN_9,GPIO_PIN_3,GPIO_PIN_2,GPIO_PIN_7,GPIO_PIN_13,GPIO_PIN_14,GPIO_PIN_4};
+
+/* LED 핀 배열 (GPIOD PD10~15) */
+int LED[6] = {GPIO_PIN_10,GPIO_PIN_11,GPIO_PIN_12,GPIO_PIN_13,GPIO_PIN_14,GPIO_PIN_15};
+
+
+void FND_con(int value, int no){
+  int FND[8];                    // 로컬 FND 핀 배열
+  int fnd_value = FND_CA[value]; // 해당 숫자의 세그먼트 패턴
+  
+  /* FND1 또는 FND2 핀 배열 복사 */
+  if (no == 1) memcpy(FND, FND1, sizeof(FND1));
+  else memcpy(FND, FND2, sizeof(FND2));
+  
+  /* 8개 세그먼트 점등 제어 */
+  for (int z = 0; z < 8; z++) 
+    HAL_GPIO_WritePin(GPIOE, FND[z], SET_IF(fnd_value & (1<<z)));
+}
+
+/**
+ *  LED 좌→우 순차 점등 (파도 효과)
+ */
+void LED_left_shift(){
+  for(int k = 0; k < 6; k++)
+  {
+    if(k == 0) HAL_GPIO_WritePin(GPIOD, LED[5], 0);  // 첫 시작: 맨 오른쪽 LED OFF
+    else HAL_GPIO_WritePin(GPIOD, LED[k-1], 0);      // 이전 LED OFF
+    HAL_GPIO_WritePin(GPIOD, LED[k], 1);             // 현재 LED ON 
+    HAL_Delay(500);
+  }
+}
+
+/**
+ *  LED 우→좌 순차 점등 (역파도 효과)
+ */
+void LED_right_shift(){
+  for(int z = 5; z >= 0; z--)
+  {
+    if(z == 5) HAL_GPIO_WritePin(GPIOD, LED[0], 0);  // 첫 시작: 맨 왼쪽 LED OFF
+    else HAL_GPIO_WritePin(GPIOD, LED[z+1], 0);      // 이전 LED OFF
+    HAL_GPIO_WritePin(GPIOD, LED[z], 1);             // 현재 LED ON 
+    HAL_Delay(200);  // 더 빠른 속도 (200ms)
+  }
+}
+/* USER CODE END 0 */
+
+int main(void){
+  /* MCU 기본 초기화 */
+  HAL_Init();
+  SystemClock_Config();
+  MX_GPIO_Init();
+
+  /* ========== 무한 루프 ========= */
+  while (1)
+  {
+    /* 모든 FND 소수점(dp) + g 세그먼트 ON */
+    HAL_GPIO_WritePin(GPIOE, FND1[6], 1);  // FND1 g세그먼트
+    HAL_GPIO_WritePin(GPIOE, FND1[7], 1);  // FND1 dp(소수점)
+    HAL_GPIO_WritePin(GPIOE, FND2[6], 1);  // FND2 g세그먼트
+    HAL_GPIO_WritePin(GPIOE, FND2[7], 1);  // FND2 dp(소수점)
+
+    /* 0~9 반복: LED 우측 이동 + FND2 숫자 표시 */
+    for(int i = 0; i < 10; i++)
+    {
+      LED_right_shift();        // LED 우→좌 파도 (1.2초)
+      FND_con(i, 2);            // FND2에 숫자 i 표시
+      HAL_Delay(500);           // 추가 대기
+    }
+    /* 10번 반복 후 다시 0부터 🔄 */
+  }
+}

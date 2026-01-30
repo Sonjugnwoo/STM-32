@@ -1,0 +1,85 @@
+/* USER CODE BEGIN Header */
+/* USER CODE END Header */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <main.h>  // STM32 HAL 라이브러리 메인 헤더 (CubeMX 자동 생성)
+/* USER CODE END Includes */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+/* 사용자 추가 헤더 파일 영역 */
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+/* 사용자 정의 타입 영역 */
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+/* 사용자 정의 상수/매크로 영역 */
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+  #define SET_IF(expr) ((expr) ? GPIO_PIN_SET : GPIO_PIN_RESET)     /* 7세그먼트 제어 매크로: 비트1→ON(SET), 비트0→OFF(RESET) */
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* 전역 변수 영역 */
+/* USER CODE BEGIN PV */
+/* 사용자 전역 변수 영역 */
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);     // 시스템 클럭 설정
+static void MX_GPIO_Init(void);    // GPIO 초기화 (PD10~15 출력)
+/* USER CODE BEGIN PFP */
+/* 사용자 함수 프로토타입 영역 */
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+/* 사용자 정의 함수 영역 */
+/* USER CODE END 0 */
+
+int main(void){
+  /* USER CODE BEGIN 1 */
+  
+  /* FND1 세그먼트 핀 (첫 번째/왼쪽 디스플레이) */
+  int FND1[8] = {GPIO_PIN_0,GPIO_PIN_1,GPIO_PIN_11,GPIO_PIN_10,GPIO_PIN_15,GPIO_PIN_5,GPIO_PIN_6,GPIO_PIN_12};
+  
+  /* FND2 세그먼트 핀 (두 번째/오른쪽 디스플레이) */
+  int FND2[8] = {GPIO_PIN_8,GPIO_PIN_9,GPIO_PIN_3,GPIO_PIN_2,GPIO_PIN_7,GPIO_PIN_13,GPIO_PIN_14,GPIO_PIN_4};
+  
+  /* 0~9 공통음극 7세그먼트 패턴 */
+  int da[10] = {0xC0,0xF9,0xA4,0xB0,0x99,0x92,0x82,0xF8,0x80,0x90};
+  
+  /* USER CODE END 1 */
+
+  /* ========== MCU 초기화 ========= */
+  HAL_Init();           // HAL 라이브러리 초기화
+  SystemClock_Config(); // 시스템 클럭 설정
+  MX_GPIO_Init();       // GPIOE FND 출력 설정
+
+  /* ========== 듀얼 FND 스캔 카운터 ========= */
+ while(1)
+  {
+  for(int num=0; num<=99; num++)  // 0~99
+    {
+    int tens = num / 10;   // 10의 자리 (0~9)
+    int ones = num % 10;   // 1의 자리 (0~9)
+    
+    /* FND1: 10의 자리 표시 */
+    for(int k=0; k<8; k++) 
+      HAL_GPIO_WritePin(GPIOE, FND1[k], SET_IF(da[tens] & (1<<k)));
+    
+    /* FND2: 1의 자리 표시 */
+    for(int k=0; k<8; k++) 
+      HAL_GPIO_WritePin(GPIOE, FND2[k], SET_IF(da[ones] & (1<<k)));
+    
+    HAL_Delay(500);  // 0.5초씩 증가 (총 50초)
+    }
+  }
+}

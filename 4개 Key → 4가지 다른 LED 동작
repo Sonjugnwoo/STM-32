@@ -1,0 +1,121 @@
+/* USER CODE BEGIN Header */
+/* USER CODE END Header */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <main.h>  // STM32 HAL 라이브러리 메인 헤더 (CubeMX 자동 생성)
+/* USER CODE END Includes */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+/* 사용자 추가 헤더 파일 영역 */
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+/* 사용자 정의 타입 영역 */
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+/* 사용자 정의 상수/매크로 영역 */
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+  #define SET_IF(expr) ((expr) ? GPIO_PIN_SET : GPIO_PIN_RESET)   /* 매크로: 조건 참→SET(1), 거짓→RESET(0) */
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* 전역 변수 영역 */
+/* USER CODE BEGIN PV */
+/* 사용자 전역 변수 영역 */
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);     // 시스템 클럭 설정
+static void MX_GPIO_Init(void);    // GPIO 초기화 (PD10~15 출력)
+/* USER CODE BEGIN PFP */
+/* 사용자 함수 프로토타입 영역 */
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+/* 사용자 정의 함수 영역 */
+/* USER CODE END 0 */
+
+int main(void){
+  /* USER CODE BEGIN 1 */  
+  /* 스위치 핀 배열 (GPIOA) */
+  int SW[4] = {GPIO_PIN_0, GPIO_PIN_1, GPIO_PIN_2, GPIO_PIN_3};
+  
+  /* LED 핀 배열 (GPIOD) */
+  int LED[6] = {GPIO_PIN_10, GPIO_PIN_11, GPIO_PIN_12, GPIO_PIN_13, GPIO_PIN_14, GPIO_PIN_15};
+  /* USER CODE END 1 */
+
+  /* MCU 기본 초기화 */
+  HAL_Init();           // HAL 라이브러리 초기화
+  SystemClock_Config(); // 시스템 클럭 설정
+  MX_GPIO_Init();       // GPIO 초기화 (SW 입력, LED 출력)
+
+  /* ========== 무한 루프 ========== */
+  while (1)
+  {
+    /* SW1 (PA0): 바이너리 업카운트 0→63 → 모든 LED OFF */
+    if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == 1)
+    {
+      for(int i = 0; i < 64; i++)  // 0~63 (2^6 패턴)
+      {
+        for(int j = 0; j < 6; j++)
+          HAL_GPIO_WritePin(GPIOD, LED[j], SET_IF(i & (1<<j)));  // i의 j번째 비트로 LED 제어
+        HAL_Delay(500);  // 0.5초 대기
+      }
+      for(int i = 0; i < 6; i++)  // 카운트 완료 후 모든 LED 소등
+        HAL_GPIO_WritePin(GPIOD, LED[i], 0);
+    }
+
+    /* SW2 (PA1): 좌→우 순차 점등 → 모든 LED OFF */
+    if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == 1)
+    {
+      for(int z = 0; z < 6; z++)
+      {
+        if(z == 0) HAL_GPIO_WritePin(GPIOD, LED[5-z], 0);  // 첫 시작: 맨 오른쪽(LED5) 소등
+        else HAL_GPIO_WritePin(GPIOD, LED[z-1], 0);        // 이전 LED 소등
+        HAL_GPIO_WritePin(GPIOD, LED[z], 1);               // 현재 LED 점등 
+        HAL_Delay(500);
+      }
+      for(int z = 0; z < 6; z++) HAL_GPIO_WritePin(GPIOD, LED[z], 0);  // 전부 소등
+    }
+
+    /* SW3 (PA2): 모든 LED 순차 점등 → 순차 소등 */
+    if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2) == 1)
+    {
+      /* 1단계: 순차 점등 */
+      for(int a = 0; a < 6; a++)
+      {
+        HAL_GPIO_WritePin(GPIOD, LED[a], 1);  // 순차적으로 점등
+        HAL_Delay(500);
+      }
+      /* 2단계: 순차 소등 */
+      for(int a = 0; a < 6; a++)
+      {
+        HAL_GPIO_WritePin(GPIOD, LED[a], 0);  // 순차적으로 소등
+        HAL_Delay(500);
+      }
+    }
+
+    /* SW4 (PA3): LED D3,D5,D7 ↔ D4,D6,D8 교차 점등 */
+    if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == 1)
+    {
+      /* D3,D5,D7 점등 + D4,D6,D8 소등 (PD10,12,14 ON / PD11,13,15 OFF) */
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10|GPIO_PIN_12|GPIO_PIN_14, 1);
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11|GPIO_PIN_13|GPIO_PIN_15, 0);
+      HAL_Delay(1000);
+      
+      /* D4,D6,D8 점등 + D3,D5,D7 소등 (반대) */
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10|GPIO_PIN_12|GPIO_PIN_14, 0);
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11|GPIO_PIN_13|GPIO_PIN_15, 1);
+      HAL_Delay(1000);
+    }
+  }
+}

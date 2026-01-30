@@ -1,0 +1,92 @@
+/* USER CODE BEGIN Header */
+/* USER CODE END Header */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <main.h>  // STM32 HAL 라이브러리 메인 헤더 (CubeMX 자동 생성)
+/* USER CODE END Includes */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+/* 사용자 추가 헤더 파일 영역 */
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+/* 사용자 정의 타입(구조체, enum 등) 영역 */
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+  #define SET_IF(expr) ((expr) ? GPIO_PIN_SET : GPIO_PIN_RESET)   // 조건 참→ON(1)
+  #define RE_IF(expr) ((expr) ? GPIO_PIN_RESET : GPIO_PIN_SET)    // 조건 참→OFF(0) (미사용)
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+/* 사용자 정의 매크로 함수 영역 */
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* 전역 변수 영역 (CubeMX 관리) */
+/* USER CODE BEGIN PV */
+/* 사용자 전역 변수 영역 */
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);     // 시스템 클럭 설정 함수 (CubeMX 자동 생성)
+static void MX_GPIO_Init(void);    // GPIO 초기화 함수 (CubeMX 자동 생성)
+/* USER CODE BEGIN PFP */
+/* 사용자 함수 프로토타입 영역 */
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+/* 사용자 정의 함수 영역 */
+/* USER CODE END 0 */
+
+int main(void){
+  /* USER CODE BEGIN 1 */
+  
+  /* 스위치 핀 배열 (GPIOA) */
+  int SW[4] = {GPIO_PIN_0, GPIO_PIN_1, GPIO_PIN_2, GPIO_PIN_3};
+  
+  /* LED 핀 배열 (GPIOD) */
+  int LED[6] = {GPIO_PIN_10, GPIO_PIN_11, GPIO_PIN_12, GPIO_PIN_13, GPIO_PIN_14, GPIO_PIN_15};
+  /* USER CODE END 1 */
+
+  /* ========== MCU 초기화 ========= */
+  HAL_Init();           // HAL 라이브러리 초기화
+  SystemClock_Config(); // 시스템 클럭 설정
+  MX_GPIO_Init();       // GPIO 초기화 (SW 입력, LED 출력)
+
+  /* ========== 무한 루프 ========== */
+  while (1)
+  {
+    /* SW1 (PA0): 1→10 바이너리 업카운트 (1초 간격) */
+    if(HAL_GPIO_ReadPin(GPIOA, SW[0]) == 1)  // SW1 High Active
+    {
+      for (int i = 1; i < 11; i++)  // i=1~10
+      {
+        for(int j = 0; j < 6; j++)  // 각 LED 비트 확인
+        {
+          HAL_GPIO_WritePin(GPIOD, LED[j], SET_IF(i & (1<<j)));  // i의 j비트=1이면 LED ON
+        }
+        HAL_Delay(1000);  // 1초 대기
+      }
+    }
+
+    /* SW2 (PA1): 10→1 바이너리 다운카운트 (1초 간격, 역순 LED) */
+    if(HAL_GPIO_ReadPin(GPIOA, SW[1]) == 1)  // SW2 High Active
+    {
+      for (int i = 10; i > 0; i--)  // i=10~1
+      {
+        for(int j = 5; j >= 0; j--)  // j=5→0 (PD15→PD10 역순)
+        {
+          HAL_GPIO_WritePin(GPIOD, LED[j], SET_IF(i & (1<<j)));  // i의 j비트로 LED 제어
+        }
+        HAL_Delay(1000);  // 1초 대기
+      }
+    }
+  }
+}

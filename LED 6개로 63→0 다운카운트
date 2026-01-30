@@ -1,0 +1,80 @@
+/* USER CODE BEGIN Header */
+/* USER CODE END Header */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <main.h>  // STM32 HAL 라이브러리 메인 헤더 (CubeMX 자동 생성)
+/* USER CODE END Includes */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+/* 사용자 추가 헤더 파일 영역 */
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+/* 사용자 정의 타입 영역 */
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+/* 비트 조건에 따라 SET/RESET 결정하는 매크로 */
+#define SET_IF(expr) ((expr)? GPIO_PIN_RESET : GPIO_PIN_SET)  // expr 참 → RESET(0), 거짓 → SET(1)
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+/* 사용자 정의 매크로 함수 영역 */
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* 전역 변수 영역 */
+/* USER CODE BEGIN PV */
+/* 사용자 전역 변수 영역 */
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);     // 시스템 클럭 설정
+static void MX_GPIO_Init(void);    // GPIO 초기화 (PD10~15 출력)
+/* USER CODE BEGIN PFP */
+/* 사용자 함수 프로토타입 영역 */
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+/* 사용자 정의 함수 영역 */
+/* USER CODE END 0 */
+
+
+int main(void){
+  /* USER CODE BEGIN 1 */
+  /* PD10~PD15 핀 배열 정의 */
+  int LED[6] = {GPIO_PIN_10, GPIO_PIN_11, GPIO_PIN_12, GPIO_PIN_13, GPIO_PIN_14, GPIO_PIN_15};
+  /* USER CODE END 1 */
+
+  /* ========== MCU 기본 초기화 ========= */
+  HAL_Init();  // HAL, Systick, Flash 초기화
+
+  SystemClock_Config();  // 시스템 클럭 설정
+
+  MX_GPIO_Init();  // PD10~PD15 출력 모드 설정
+
+  /* ========== 무한 루프 (63→0 반복) ========== */
+  while (1)
+  {
+    /* USER CODE BEGIN 3 */
+    /* 63부터 0까지 바이너리 카운트다운 (64가지 조합) */
+    for(int i=63; i>=0; i--)  // 63→0 다운카운트
+  {
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, SET_IF(i&0x20));
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, SET_IF(i&0x10));
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, SET_IF(i&0x08));
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, SET_IF(i&0x04));
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, SET_IF(i&0x02));
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10, SET_IF(i&0x01));
+
+    HAL_Delay(1000);
+  }
+    /* 63→0 완료 → 다시 0부터 반복 */
+  }
+}

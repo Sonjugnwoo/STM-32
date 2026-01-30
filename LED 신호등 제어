@@ -1,0 +1,82 @@
+/* USER CODE BEGIN Header */
+/* USER CODE END Header */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <main.h>  // STM32 HAL 라이브러리 메인 헤더 (CubeMX 자동 생성)
+/* USER CODE END Includes */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+/* 사용자 추가 헤더 파일 영역 */
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+/* 사용자 정의 타입 영역 */
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+/* 비트 조건에 따라 SET/RESET 결정하는 매크로 */
+#define SET_IF(expr) ((expr)? GPIO_PIN_RESET : GPIO_PIN_SET)  // expr 참 → RESET(0), 거짓 → SET(1)
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+/* 사용자 정의 매크로 함수 영역 */
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* 전역 변수 영역 */
+/* USER CODE BEGIN PV */
+/* 사용자 전역 변수 영역 */
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);     // 시스템 클럭 설정
+static void MX_GPIO_Init(void);    // GPIO 초기화 (PD10~15 출력)
+/* USER CODE BEGIN PFP */
+/* 사용자 함수 프로토타입 영역 */
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+/* 사용자 정의 함수 영역 */
+/* USER CODE END 0 */
+int main(void){
+  /* ========== MCU 기본 초기화 ========= */
+  HAL_Init();  // HAL, Systick, Flash 초기화
+
+  SystemClock_Config();  // 시스템 클럭 설정
+
+  MX_GPIO_Init();  // PD10~PD15 출력 모드 설정
+
+
+  while (1)
+  {
+    /*  1단계: 빨간+초록 (PD10,PD15) - 정지 신호 */
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10|GPIO_PIN_15, 1);  // 빨강+초록 
+    HAL_Delay(1000);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10|GPIO_PIN_15, 0);
+
+    /*  2단계: 빨간+노랑 (PD10,PD14) - 주의 신호 */
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10|GPIO_PIN_14, 1);  // 빨강+노랑
+    HAL_Delay(1000);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10|GPIO_PIN_14, 0);
+
+    /*  3단계: 노랑+노랑 (PD12,PD13) - 전환 신호 */
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13, 1);  // 중앙 노랑 
+    HAL_Delay(1000);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13, 0);
+
+    /*  4단계: 노랑+초록 (PD11,PD13) - 진행 준비 */
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13|GPIO_PIN_11, 1);  
+    HAL_Delay(1000);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13|GPIO_PIN_11, 0);
+
+    /* → 무한 반복으로 신호등 사이클 완성!  */
+  }
+}
+
+/* USER CODE END 3 */
