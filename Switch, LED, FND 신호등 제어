@@ -1,0 +1,142 @@
+/* USER CODE BEGIN Header */
+/* USER CODE END Header */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <main.h>  // STM32 HAL 라이브러리 메인 헤더 (CubeMX 자동 생성)
+
+/* USER CODE END Includes */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+/* 사용자 추가 헤더 파일 영역 */
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+/* 사용자 정의 타입(구조체, enum 등) 영역 */
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+// SET_IF 매크로: 조건이 true면 GPIO_PIN_SET, false면 GPIO_PIN_RESET 반환
+#define SET_IF(expr) ((expr)? GPIO_PIN_SET : GPIO_PIN_RESET)
+// 6개 LED 모두 토글할 때 사용할 핀 마스크 (GPIOD 포트)
+#define all GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+/* 사용자 정의 매크로 함수 영역 */
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* 전역 변수 영역 (CubeMX 관리) */
+/* USER CODE BEGIN PV */
+/* 사용자 전역 변수 영역 */
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);     // 시스템 클럭 설정 함수 (CubeMX 자동 생성)
+static void MX_GPIO_Init(void);    // GPIO 초기화 함수 (CubeMX 자동 생성)
+/* USER CODE BEGIN PFP */
+/* 사용자 함수 프로토타입 영역 */
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+/* 사용자 정의 함수 영역 */
+/* USER CODE END 0 */
+
+// 스위치 핀 배열 (GPIOA)
+int SW[4]={GPIO_PIN_0, GPIO_PIN_1,GPIO_PIN_2,GPIO_PIN_3};
+
+// 공통음극 FND 0~9 패턴 (a~g,dp 순서)
+unsigned char FND_CA[]={0xC0, 0xF9, 0xA4, 0xB0, 0x99, 0x92, 0x82, 0xF8, 0x80, 0x90};
+
+// FND1 데이터 핀 (GPIOE)
+int FND1[8] = {GPIO_PIN_0,GPIO_PIN_1,GPIO_PIN_11,GPIO_PIN_10,GPIO_PIN_15,GPIO_PIN_5,GPIO_PIN_6,GPIO_PIN_12};
+
+// FND2 데이터 핀 (GPIOE)
+int FND2[8] = {GPIO_PIN_8,GPIO_PIN_9,GPIO_PIN_3,GPIO_PIN_2,GPIO_PIN_7,GPIO_PIN_13,GPIO_PIN_14,GPIO_PIN_4};
+
+// LED 핀 배열 (GPIOD)
+int LED[6] = {GPIO_PIN_10,GPIO_PIN_11,GPIO_PIN_12,GPIO_PIN_13,GPIO_PIN_14,GPIO_PIN_15};
+
+// FND 제어 함수: value(0~9, 0xFF=소등)를 FND번호(1,2)에 표시
+void FND_control(int value, int no)
+{
+    int FND[8];
+    int fnd_value=FND_CA[value];
+    
+    // 0xFF 입력시 모든 세그먼트 소등
+    if(value==0xFF) fnd_value=0xFF;
+    else fnd_value=FND_CA[value];
+    
+    // FND번호에 따른 핀 배열 복사
+    if(no==1) memcpy(FND, FND1, sizeof(FND1));
+    else memcpy(FND, FND2, sizeof(FND2));
+    
+    // 각 비트에 따라 GPIO 출력
+    for(int z=0;z<8;z++) 
+        HAL_GPIO_WritePin(GPIOE, FND[z], SET_IF(fnd_value & (1<<z)));
+}
+
+// LED 애니메이션 + FND 카운터 함수 (5→0 표시)
+void LED_f()
+{
+    for(int i=5;i>=0;i--)  // 5,4,3,2,1,0 순서로 FND2 표시
+    {
+        FND_control(i,2);  // FND2에 숫자 i 표시
+        
+        if(i<=3) HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_12);  // 3,2,1,0일 때 LED12 토글
+        HAL_Delay(1000);  // 1초 대기
+    }
+    // FND1,FND2 모두 소등
+    FND_control(0xFF,1);
+    FND_control(0xFF,2);
+}
+/* USER CODE END 0 */
+
+int main(void)
+{
+    /* MCU 초기화 */
+    HAL_Init();
+    SystemClock_Config();
+    MX_GPIO_Init();
+
+    /* Infinite loop */
+    while (1)
+    {
+        // 기본 상태: LED10, LED15 항상 켜짐
+        HAL_GPIO_WritePin(GPIOD,GPIO_PIN_10|GPIO_PIN_15,1);
+        
+        /* SW0(스위치0) 눌렀을 때 시퀀스 실행 */
+        if(HAL_GPIO_ReadPin(GPIOA, SW[0]) == 1)
+        {
+            // LED10,15 끄고 LED10,14 켜기 (2000ms)
+            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_10|GPIO_PIN_15,0);
+            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_10|GPIO_PIN_14,1);
+            HAL_Delay(2000);
+            
+            // LED10,14 끄고 LED12,13 켜기
+            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_10|GPIO_PIN_14,0);
+            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_12|GPIO_PIN_13,1);
+            
+            // FND 카운터 + LED 애니메이션 실행 (6초 소요)
+            LED_f();
+            
+            // LED12,13 끄기
+            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_12|GPIO_PIN_13,0);
+            
+            // LED13,11 켜기 (2000ms)
+            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_13|GPIO_PIN_11,1);
+            HAL_Delay(2000);
+        }
+        
+        // 시퀀스 종료 후 LED13,11 끄기
+        HAL_GPIO_WritePin(GPIOD,GPIO_PIN_13|GPIO_PIN_11,0);
+        
+        /* 디바운싱 없음 - SW0 길게 누르면 반복 실행 */
+    }
+}

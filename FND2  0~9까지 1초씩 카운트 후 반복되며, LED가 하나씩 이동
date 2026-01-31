@@ -1,0 +1,133 @@
+/* USER CODE BEGIN Header */
+/* USER CODE END Header */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include <main.h>  // STM32 HAL 라이브러리 메인 헤더 (CubeMX 자동 생성)
+/* USER CODE END Includes */
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+/* 사용자 추가 헤더 파일 영역 */
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+/* 사용자 정의 타입(구조체, enum 등) 영역 */
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+// SET_IF 매크로: 조건이 true면 GPIO_PIN_SET, false면 GPIO_PIN_RESET 반환
+#define SET_IF(expr) ((expr)? GPIO_PIN_SET : GPIO_PIN_RESET)
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+/* 사용자 정의 매크로 함수 영역 */
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* 전역 변수 영역 (CubeMX 관리) */
+/* USER CODE BEGIN PV */
+/* 사용자 전역 변수 영역 */
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);     // 시스템 클럭 설정 함수 (CubeMX 자동 생성)
+static void MX_GPIO_Init(void);    // GPIO 초기화 함수 (CubeMX 자동 생성)
+/* USER CODE BEGIN PFP */
+/* 사용자 함수 프로토타입 영역 */
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+/* 사용자 정의 함수 영역 */
+/* USER CODE END 0 */
+
+// 공통음극 FND 0~9 숫자 표시를 위한 7세그먼트 패턴 배열 (a~g, dp 순서)
+unsigned char FND_CA[] = {0xC0,0xF9,0xA4,0xB0,0x99,0x92,0x82,0xF8,0x80,0x90};
+
+// FND1 데이터 핀 배열 (GPIOE 포트의 핀들 - a,b,c,d,e,f,g,dp 순서)
+int FND1[8] ={GPIO_PIN_0,GPIO_PIN_1,GPIO_PIN_11,GPIO_PIN_10,GPIO_PIN_15,GPIO_PIN_5,GPIO_PIN_6,GPIO_PIN_12};
+
+// FND2 데이터 핀 배열 (GPIOE 포트의 핀들 - a,b,c,d,e,f,g,dp 순서)  
+int FND2[8] ={GPIO_PIN_8,GPIO_PIN_9,GPIO_PIN_3,GPIO_PIN_2,GPIO_PIN_7,GPIO_PIN_13,GPIO_PIN_14,GPIO_PIN_4};
+
+// LED 핀 배열 (GPIOD 포트의 6개 LED 핀들)
+int LED[6] = {GPIO_PIN_10,GPIO_PIN_11,GPIO_PIN_12,GPIO_PIN_13,GPIO_PIN_14,GPIO_PIN_15};
+
+// FND 표시 함수: value(0~9)를 no(1:FND1, 2:FND2)에 표시
+void FND_con(int value, int no)
+{
+    int FND[8];  // 임시 배열
+    int fnd_value = FND_CA[value];  // 해당 숫자의 7세그 패턴 값
+    
+    // FND 번호에 따라 핀 배열 복사
+    if (no == 1 ) memcpy(FND,FND1,sizeof(FND1));
+    else memcpy(FND,FND2,sizeof(FND2));
+    
+    // 각 비트에 따라 GPIO 출력 (비트 0~7 → a~g,dp)
+    for (int z=0;z<8;z++) 
+        HAL_GPIO_WritePin(GPIOE,FND[z],SET_IF(fnd_value & (1<<z)));
+}
+
+// LED 좌측 이동: 오른쪽에서 왼쪽으로 LED 하나씩 켜짐 효과
+void LED_left_shift()
+{
+    for(int k=0;k<6;k++)  // 6개 LED 순차 점등
+    {
+        if(k==0) HAL_GPIO_WritePin(GPIOD,LED[5],0);  // 첫번째일 때 마지막 LED 끄기
+        else HAL_GPIO_WritePin(GPIOD,LED[k-1],0);    // 이전 LED 끄기
+        HAL_GPIO_WritePin(GPIOD,LED[k],1);           // 현재 LED 켜기
+        HAL_Delay(500);  // 500ms 대기
+    }
+}
+
+// LED 우측 이동: 왼쪽에서 오른쪽으로 LED 하나씩 켜짐 효과  
+void LED_right_shift()
+{
+    for(int z=5;z>=0;z--)  // 6개 LED 역순 점등
+    {
+        if(z==5) HAL_GPIO_WritePin(GPIOD,LED[0],0);  // 마지막일 때 첫번째 LED 끄기
+        else HAL_GPIO_WritePin(GPIOD,LED[z+1],0);    // 다음 LED 끄기
+        HAL_GPIO_WritePin(GPIOD,LED[z],1);           // 현재 LED 켜기
+        HAL_Delay(200);  // 200ms 대기
+    }
+}
+/* USER CODE END 0 */
+
+int main(void)
+{
+    /* MCU Configuration--------------------------------------------------------*/
+    HAL_Init();           // HAL 라이브러리 초기화
+    SystemClock_Config(); // 시스템 클럭 설정
+    MX_GPIO_Init();       // GPIO 초기화
+
+    /* Infinite loop */
+    /* USER CODE BEGIN WHILE */
+    while (1)
+    {
+        // FND1의 g,dp 핀 강제 켜기 (FND1 유지?)
+        HAL_GPIO_WritePin(GPIOE,FND1[6],1);
+        HAL_GPIO_WritePin(GPIOE,FND1[7],1);
+        
+        // LED 우측 이동 애니메이션 (오른쪽 끝에서 시작)
+        for (int l=5;l>=0;l--)
+        {
+            if(l==5) HAL_GPIO_WritePin(GPIOD,LED[0],0);     // 첫번째 LED 끄기
+            else HAL_GPIO_WritePin(GPIOD,LED[l+1],0);       // 다음 LED 끄기
+            HAL_GPIO_WritePin(GPIOD,LED[l],1);              // 현재 LED 켜기
+            HAL_Delay(200);                                 // 200ms 대기
+            
+            // FND2에 0~9까지 500ms씩 순차 표시 (10초 주기)
+            for(int i=0;i<10;i++)
+            {
+                FND_con(i,2);    // FND2에 숫자 i 표시
+                HAL_Delay(500);  // 500ms 유지
+            }
+        }
+        /* USER CODE END WHILE */
+        /* USER CODE BEGIN 3 */
+    }
+}
